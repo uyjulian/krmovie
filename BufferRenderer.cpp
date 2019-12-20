@@ -44,7 +44,7 @@ CUnknown * WINAPI TBufferRenderer::CreateInstance( LPUNKNOWN pUnk, HRESULT *phr 
 //----------------------------------------------------------------------------
 TBufferRenderer::TBufferRenderer( TCHAR *pName, LPUNKNOWN pUnk, HRESULT *phr )
  : CBaseVideoRenderer( CLSID_BufferRenderer, pName, pUnk, phr )
-, m_InputPin( this, &m_InterfaceLock, phr, L"Input" )
+, m_InputPin( this, &m_InterfaceLock, phr, TJS_W("Input") )
 , m_Allocator( this, NAME("Allocator"), GetOwner(), phr )
 {
 	//CBaseRender::m_pInputPinにポインタを設定する。
@@ -273,7 +273,7 @@ void TBufferRenderer::AllocFrontBuffer( size_t size )
 	}
 
 	if( buff == NULL )
-		throw L"Cannot allocate memory in filter.";
+		throw TJS_W("Cannot allocate memory in filter.");
 }
 //---------------------------------------------------------------------------
 //! @brief	  	バックバッファにメモリを割り当てる。
@@ -297,7 +297,7 @@ void TBufferRenderer::AllocBackBuffer( size_t size )
 	}
 
 	if( buff == NULL )
-		throw L"Cannot allocate memory in filter.";
+		throw TJS_W("Cannot allocate memory in filter.");
 }
 //---------------------------------------------------------------------------
 //! @brief	  	フロントバッファに割り当てられているメモリを開放する
