@@ -16,6 +16,7 @@
 #define __DEMUX_READER_H__
 
 #include <windows.h>
+#include "tp_stub.h"
 //#include <dshow.h>
 #include <tchar.h>
 #include <streams.h>

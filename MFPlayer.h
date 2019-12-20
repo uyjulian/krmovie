@@ -2,6 +2,8 @@
 #ifndef __MF_PLAYER_H__
 #define __MF_PLAYER_H__
 
+#include "tp_stub.h"
+#define tjs_string std::wstring
 #include "PlayWindow.h"
 #include "CDLLLoader.h"
 

@@ -15,6 +15,7 @@
 #ifndef __VIDEO_BUFFER_RENDER_H__
 #define __VIDEO_BUFFER_RENDER_H__
 
+#include "tp_stub.h"
 #include "IBufferRenderer.h"
 #include "IRendererBufferAccess.h"
 #include "IRendererBufferVideo.h"

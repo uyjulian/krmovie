@@ -25,6 +25,8 @@
 #include "../krmovie.h"
 #include <vector>
 
+#include "tp_stub.h"
+
 class CIStreamProxy;
 class CIStreamReader;
 #ifdef ENABLE_THEORA
