@@ -1,0 +1,6 @@
+[submodule "external/baseclasses"]
+	path = external/baseclasses
+	url = https://github.com/krkrz/baseclasses.git
+[submodule "external/ogg_win32"]
+	path = external/ogg_win32
+	url = https://github.com/uyjulian/ogg_win32.git
