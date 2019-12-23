@@ -39,7 +39,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 //---------------------------------------------------------------------------
 // GetVideoOverlayObject
 //---------------------------------------------------------------------------
-const void __stdcall GetVideoOverlayObject(
+void __stdcall GetVideoOverlayObject(
 	HWND callbackwin, IStream *stream, const tjs_char * streamname,
 	const tjs_char *type, unsigned __int64 size, iTVPVideoOverlay **out)
 {
