@@ -114,17 +114,11 @@ LINKFLAGS += /LIBPATH:/opt/msvc/vc/tools/msvc/14.16.27023/atlmfc/lib/x86
 LDLIBS += -nostdlib -lmsvcrt -Wno-msvc-not-found 
 
 LDLIBS += -lgdi32
-LDLIBS += -lstrmiids
 LDLIBS += -lwinmm
-LDLIBS += -ldmoguids
-LDLIBS += -lquartz
 LDLIBS += -shared
 
 LINKLIBS += gdi32.lib
-LINKLIBS += strmiids.lib
 LINKLIBS += winmm.lib
-LINKLIBS += dmoguids.lib
-LINKLIBS += quartz.lib
 
 .PHONY: clean
 

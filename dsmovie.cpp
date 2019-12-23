@@ -33,6 +33,11 @@
 #endif
 #endif
 
+#pragma comment (lib, "strmiids")
+#pragma comment (lib, "quartz")
+#pragma comment (lib, "dmoguids")
+
+
 // {BAE59473-019E-4f1f-8A8C-3D41A9F4921E}
 static const GUID CLSID_WMReaderSource = 
 { 0xbae59473, 0x19e, 0x4f1f, { 0x8a, 0x8c, 0x3d, 0x41, 0xa9, 0xf4, 0x92, 0x1e } };
