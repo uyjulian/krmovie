@@ -49,6 +49,7 @@ CXXFLAGS += -isystem /opt/msvc/kits/10/include/10.0.17763.0/um
 CXXFLAGS += -isystem /opt/msvc/kits/10/include/10.0.17763.0/winrt
 
 CXXFLAGS += -DUNICODE -D_UNICODE
+CXXFLAGS += -DENABLE_THEORA
 CXXFLAGS += -DNDEBUG
 CXXFLAGS += -O2
 CXXFLAGS += -I.
