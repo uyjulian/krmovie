@@ -603,15 +603,21 @@ void tTVPMFPlayer::OnPlay() {
 //----------------------------------------------------------------------------
 void __stdcall tTVPMFPlayer::SetWindow(HWND window) {
 	HRESULT hr = E_FAIL;
-	OwnerWindow = window;
-	PlayWindow::SetOwner( window );
-	if( VideoDisplayControl.p ) {
-		hr = VideoDisplayControl->SetVideoWindow( window );
-		if( FAILED(hr) ) {
-			TVPThrowExceptionMessage( TJS_W( "Faild to call SetVideoWindow." ) );
+	// 吉里吉里ZではWindowハンドルが変わらないはずなので、NULLの時は何もしない
+	if( window == NULL ) return;
+
+	if( OwnerWindow != window ) {
+		OwnerWindow = window;
+		PlayWindow::SetOwner( window );
+		if( VideoDisplayControl.p ) {
+			//hr = VideoDisplayControl->SetVideoWindow( window );
+			hr = VideoDisplayControl->SetVideoWindow( GetChildWindow() );
+			if( FAILED( hr ) ) {
+				TVPThrowExceptionMessage( TJS_W( "Faild to call SetVideoWindow." ) );
+			}
 		}
+		CreateVideoPlayer();
 	}
-	CreateVideoPlayer();
 }
 void __stdcall tTVPMFPlayer::SetMessageDrainWindow(HWND window) {
 	PlayWindow::SetMessageDrainWindow( window );
