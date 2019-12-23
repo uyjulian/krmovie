@@ -176,7 +176,7 @@ void __stdcall tTVPMFPlayer::BuildGraph( HWND callbackwin, IStream *stream,
 	HRESULT hr = S_OK;
 	// MFCreateMFByteStreamOnStream は、Windows 7 以降にのみある API なので、動的ロードして Vista での起動に支障がないようにする
 	if( MfplatDLL.IsLoaded() == false ) MfplatDLL.Load(TJS_W("mfplat.dll"));
-	typedef HRESULT (*FuncMFCreateMFByteStreamOnStream)(IStream *pStream,IMFByteStream **ppByteStream);
+	typedef HRESULT (WINAPI *FuncMFCreateMFByteStreamOnStream)(IStream *pStream,IMFByteStream **ppByteStream);
 	FuncMFCreateMFByteStreamOnStream pCreateMFByteStream = (FuncMFCreateMFByteStreamOnStream)MfplatDLL.GetProcAddress("MFCreateMFByteStreamOnStream");
 	if( pCreateMFByteStream == NULL ) {
 		TVPThrowExceptionMessage(TJS_W("Faild to retrieve MFCreateMFByteStreamOnStream from mfplat.dll."));
