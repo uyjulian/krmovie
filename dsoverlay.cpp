@@ -16,6 +16,7 @@
 
 #include "dsoverlay.h"
 #include "CIStream.h"
+#include "LAVFiltersLoader.h"
 
 #include "DShowException.h"
 #include "OptionInfo.h"
@@ -62,7 +63,7 @@ void __stdcall tTVPDSVideoOverlay::BuildGraph( HWND callbackwin, IStream *stream
 			AddToROT(m_dwROTReg);
 		}
 
-		if( IsWindowsMediaFile(type) )
+		if( IsWindowsMediaFile(type) && !CanLAVFiltersBeUsed() )
 		{
 			CComPtr<IBaseFilter>	pVRender;	// for video renderer filter
 			if( FAILED(hr = pVRender.CoCreateInstance(CLSID_VideoRenderer, NULL, CLSCTX_INPROC_SERVER)) )
@@ -94,7 +95,17 @@ void __stdcall tTVPDSVideoOverlay::BuildGraph( HWND callbackwin, IStream *stream
 			// AddFilterしたのでRelease
 			m_Reader->Release();
 
-			if( mt.subtype == MEDIASUBTYPE_Avi || mt.subtype == MEDIASUBTYPE_QTMovie )
+			if (CanLAVFiltersBeUsed())
+			{
+				CComPtr<IBaseFilter>	pVRender;	// for video renderer filter
+				if( FAILED(hr = pVRender.CoCreateInstance(CLSID_VideoRenderer, NULL, CLSCTX_INPROC_SERVER)) )
+					ThrowDShowException(TJS_W("Failed to create video renderer filter object."), hr);
+				if( FAILED(hr = GraphBuilder()->AddFilter(pVRender, TJS_W("Video Renderer"))) )
+					ThrowDShowException(TJS_W("Failed to call IFilterGraph::AddFilter."), hr);
+				
+				BuildLAVFiltersGraph( pVRender, m_Reader );
+			}
+			else if( mt.subtype == MEDIASUBTYPE_Avi || mt.subtype == MEDIASUBTYPE_QTMovie )
 			{
 				// render output pin
 				if( FAILED(hr = GraphBuilder()->Render(m_Reader->GetPin(0))) )

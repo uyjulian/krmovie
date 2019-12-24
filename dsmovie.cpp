@@ -33,6 +33,8 @@
 #endif
 #endif
 
+#include "LAVFiltersLoader.h"
+
 #pragma comment (lib, "strmiids")
 #pragma comment (lib, "quartz")
 #pragma comment (lib, "dmoguids")
@@ -1723,6 +1725,61 @@ void tTVPDSMovie::BuildTheoraGraph( IBaseFilter *pRdr, IBaseFilter *pSrc )
 	return;
 }
 #endif
+//----------------------------------------------------------------------------
+//! @brief	  	LAV 用のグラフを手動で構築する
+//! @param		pRdr : グラフに参加しているレンダーフィルタ
+//! @param		pSrc : グラフに参加しているソースフィルタ
+//----------------------------------------------------------------------------
+void tTVPDSMovie::BuildLAVFiltersGraph( IBaseFilter *pRdr, IBaseFilter *pSrc )
+{
+	HRESULT	hr;
+
+	// Connect to LAV splitter filter
+	CComPtr<IBaseFilter>	pLAVSplitter( (IBaseFilter *)tTVPCreateLAVSplitterFilter(nullptr) );	// for LAV splitter filter
+
+	if( FAILED(hr = GraphBuilder()->AddFilter(pLAVSplitter, TJS_W("LAV Stream Splitter"))) )
+		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter(pLAVSplitter, L\"LAV Stream Splitter\")."), hr);
+	if( FAILED(hr = ConnectFilters( pSrc, pLAVSplitter )) )
+		ThrowDShowException(TJS_W("Failed to call ConnectFilters( pSrc, pLAVSplitter )."), hr);
+
+	// Connect to LAV video codec filter
+	CComPtr<IBaseFilter>	pLAVVideoCodec( (IBaseFilter *)tTVPCreateLAVVideoFilter(nullptr) );	// for LAV video codec filter
+	if( FAILED(hr = GraphBuilder()->AddFilter(pLAVVideoCodec, TJS_W("LAV Video Decoder"))) )
+		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter(pLAVVideoCodec, L\"LAV Video Decoder\")."), hr);
+	if( FAILED(hr = ConnectFilters( pLAVSplitter, pLAVVideoCodec )) )
+		ThrowDShowException(TJS_W("Failed to call ConnectFilters( pLAVSplitter, pLAVVideoCodec )."), hr);
+
+	// Connect to render filter
+	if( FAILED(hr = ConnectFilters( pLAVVideoCodec, pRdr )) )
+		ThrowDShowException(TJS_W("Failed to call ConnectFilters( pLAVVideoCodec, pRdr )."), hr);
+
+	// Connect to LAV audio codec filter
+	CComPtr<IBaseFilter>	pLAVAudioCodec( (IBaseFilter *)tTVPCreateLAVAudioFilter(nullptr) );	// for LAV audio codec filter
+	if( FAILED(hr = GraphBuilder()->AddFilter(pLAVAudioCodec, TJS_W("LAV Audio Decoder"))) )
+		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter(pLAVAudioCodec, L\"LAV Audio Decoder\")."), hr);
+	if( FAILED(hr = ConnectFilters( pLAVSplitter, pLAVAudioCodec )) )
+	{	// not have Audio.
+		if( FAILED(hr = GraphBuilder()->RemoveFilter( pLAVAudioCodec)) )
+			ThrowDShowException(TJS_W("Failed to call GraphBuilder()->RemoveFilter( pLAVAudioCodec)."), hr);
+		return;
+	}
+
+	// Connect to DDS render filter
+	CComPtr<IBaseFilter>	pDDSRenderer;	// for sound renderer filter
+	if( FAILED(hr = pDDSRenderer.CoCreateInstance(CLSID_DSoundRender, NULL, CLSCTX_INPROC_SERVER)) )
+		ThrowDShowException(TJS_W("Failed to create sound render filter object."), hr);
+	if( FAILED(hr = GraphBuilder()->AddFilter(pDDSRenderer, TJS_W("Sound Renderer"))) )
+		ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter(pDDSRenderer, L\"Sound Renderer\")."), hr);
+	if( FAILED(hr = ConnectFilters( pLAVAudioCodec, pDDSRenderer ) ) )
+	{
+		if( FAILED(hr = GraphBuilder()->RemoveFilter( pLAVAudioCodec)) )
+			ThrowDShowException(TJS_W("Failed to call GraphBuilder()->RemoveFilter( pLAVAudioCodec)."), hr);
+		if( FAILED(hr = GraphBuilder()->RemoveFilter( pDDSRenderer)) )
+			ThrowDShowException(TJS_W("Failed to call GraphBuilder()->RemoveFilter( pDDSRenderer)."), hr);
+	}
+
+	return;
+}
 //----------------------------------------------------------------------------
 //! @brief	  	2つのフィルターを接続する
 //! @param		pFilterUpstream : アップストリームフィルタ

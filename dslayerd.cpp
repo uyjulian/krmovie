@@ -14,6 +14,7 @@
 
 #include "dslayerd.h"
 #include "CIStream.h"
+#include "LAVFiltersLoader.h"
 
 #include "DShowException.h"
 #include "BufferRenderer.h"
@@ -85,7 +86,7 @@ void __stdcall tTVPDSLayerVideo::BuildGraph( HWND callbackwin, IStream *stream,
 			ThrowDShowException(TJS_W("Failed to create buffer renderer object."), hr);
 		pBRender = pCBR;
 
-		if( IsWindowsMediaFile(type) )
+		if( IsWindowsMediaFile(type) && !CanLAVFiltersBeUsed() )
 		{
 			if( FAILED(hr = GraphBuilder()->AddFilter( pBRender, TJS_W("Buffer Renderer"))) )
 				ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter( pBRender, L\"Buffer Renderer\")."), hr);
@@ -112,8 +113,14 @@ void __stdcall tTVPDSLayerVideo::BuildGraph( HWND callbackwin, IStream *stream,
 
 			// AddFilter したのでリリースする。
 			m_Reader->Release();
-	
-			if( mt.subtype == MEDIASUBTYPE_Avi || mt.subtype == MEDIASUBTYPE_QTMovie )
+
+			if( CanLAVFiltersBeUsed() )
+			{
+				if( FAILED(hr = GraphBuilder()->AddFilter( pBRender, TJS_W("Buffer Renderer"))) )
+					ThrowDShowException(TJS_W("Failed to call GraphBuilder()->AddFilter( pBRender, L\"Buffer Renderer\")."), hr);
+				BuildLAVFiltersGraph( pBRender, m_Reader); // may throw an exception
+			}
+			else if( mt.subtype == MEDIASUBTYPE_Avi || mt.subtype == MEDIASUBTYPE_QTMovie )
 			{
 // GraphBuilderに自動的にグラフを構築させた後、Video Rendererをすげ替える
 // 自らグラフを構築していくよりも、AVIファイルへの対応状況が良くなるはず

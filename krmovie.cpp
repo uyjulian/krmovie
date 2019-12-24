@@ -18,6 +18,7 @@
 
 #include "dsoverlay.h"
 #include "..\krmovie.h"
+#include "LAVFiltersLoader.h"
 
 #include "asyncio.h"
 #include "asyncrdr.h"
@@ -75,6 +76,8 @@ HRESULT __stdcall V2Link(iTVPFunctionExporter *exporter)
 //	_CrtSetBreakAlloc(53);	// 指定された回数目のメモリ確保時にブレークを貼る
 
 	TVPInitImportStub(exporter);
+
+	EnsureLAVFilters();
 
 	return S_OK;
 }

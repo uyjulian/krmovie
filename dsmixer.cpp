@@ -18,6 +18,7 @@
 
 #include "dsmixer.h"
 #include "CIStream.h"
+#include "LAVFiltersLoader.h"
 #include "DShowException.h"
 #include "OptionInfo.h"
 #include <dvdmedia.h>
@@ -114,7 +115,7 @@ void __stdcall tTVPDSMixerVideoOverlay::BuildGraph( HWND callbackwin, IStream *s
 		m_AllocatorPresenter = new CVMRCustomAllocatorPresenter9(this,m_VMRLock);
 		m_AllocatorPresenter->AddRef();
 		m_AllocatorPresenter->Initialize();
-		if( IsWindowsMediaFile(type) )
+		if( IsWindowsMediaFile(type) && !CanLAVFiltersBeUsed() )
 		{
 			CComPtr<IBaseFilter>	pVMR9;
 			AddVMR9Filer( pVMR9 );
@@ -146,7 +147,18 @@ void __stdcall tTVPDSMixerVideoOverlay::BuildGraph( HWND callbackwin, IStream *s
 			// AddFilterしたのでRelease
 			m_Reader->Release();
 
-			if( mt.subtype == MEDIASUBTYPE_Avi || mt.subtype == MEDIASUBTYPE_QTMovie )
+			if( CanLAVFiltersBeUsed() )
+			{
+				CComPtr<IBaseFilter>	pVMR9;
+				AddVMR9Filer( pVMR9 );
+				BuildLAVFiltersGraph( pVMR9, m_Reader); // may throw an exception
+	
+				if( FAILED(hr = pVMR9.QueryInterface( &m_VMR9MixerCtrl ) ) )
+					ThrowDShowException(TJS_W("Failed to query IVMRMixerControl9."), hr);
+				if( FAILED(hr = pVMR9.QueryInterface( &m_VMR9MixerBmp ) ) )
+					ThrowDShowException(TJS_W("Failed to query IVMRMixerBitmap9."), hr);
+			}
+			else if( mt.subtype == MEDIASUBTYPE_Avi || mt.subtype == MEDIASUBTYPE_QTMovie )
 			{
 				// render output pin
 				if( FAILED(hr = GraphBuilder()->Render(m_Reader->GetPin(0))) )
