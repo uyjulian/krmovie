@@ -84,7 +84,6 @@ INCFLAGS += -Iexternal/krdstheora/external/ogg/include -Iexternal/krdstheora/ext
 
 LDLIBS += -lole32 -loleaut32 -luuid -lwinmm -lstrmiids -lksuser -lgdi32
 LDLIBS += -lmpr -ldmoguids -lmfplat -lmfplat -lmf -lpropsys -lmfuuid -lamstrmid -ldxguid -lwindowscodecs
-LDLIBS += -lquartz
 
 PROJECT_BASENAME = krmovie
 
@@ -93,3 +92,14 @@ RC_DESC ?= TVP Movie Playback Support DLL
 RC_LEGALCOPYRIGHT ?= Copyright (C)2001-2009 W.Dee / T.Imoto All rights reserved.
 
 include external/tp_stubz/Rules.lib.make
+
+ifeq (xarm32,x$(TARGET_ARCH))
+    QUARTZ_LIB ?=
+endif
+
+ifeq (xarm64,x$(TARGET_ARCH))
+    QUARTZ_LIB ?=
+endif
+
+QUARTZ_LIB ?= -lquartz
+LDLIBS += $(QUARTZ_LIB)
