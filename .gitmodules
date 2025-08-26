@@ -1,8 +1,12 @@
-[submodule "external/baseclasses"]
-	path = external/baseclasses
-	url = https://github.com/krkrz/baseclasses.git
-	ignore = dirty
-[submodule "external/ogg_win32"]
-	path = external/ogg_win32
-	url = https://github.com/uyjulian/ogg_win32.git
-	ignore = dirty
+[submodule "external/krdstheora"]
+	path = external/krdstheora
+	url = https://github.com/uyjulian/krdstheora.git
+	branch = mingw
+[submodule "external/krkrz"]
+	path = external/krkrz
+	url = https://github.com/uyjulian/krkrz.git
+	branch = mingw_dev_multi_platform
+[submodule "external/tp_stubz"]
+	path = external/tp_stubz
+	url = https://github.com/uyjulian/tp_stubz.git
+	branch = mingw

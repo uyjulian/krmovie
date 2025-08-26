@@ -1,31 +1,8 @@
-//---------------------------------------------------------------------------
-// krmovie.cpp ( part of KRMOVIE.DLL )
-// (c)2001-2009, W.Dee <dee@kikyou.info> and contributors
-//---------------------------------------------------------------------------
-
-/*
-	We must separate this module because sucking MS library has a lack of
-	compiler portability.
-
-	This requires DirectX7 or later or Windows Media Player 6.4 or later for
-	playbacking MPEG streams.
-
-	Modified by T.Imoto <http://www.kaede-software.com>
-*/
-
-//---------------------------------------------------------------------------
-
-
-#include "dsoverlay.h"
-#include "..\krmovie.h"
-#include "LAVFiltersLoader.h"
-
-#include "asyncio.h"
-#include "asyncrdr.h"
-
+#include <windows.h>
 #include "tp_stub.h"
+#include "krmovie.h"
 
-#include "OptionInfo.h"
+#define EXPORT(hr) extern "C" __declspec(dllexport) hr __stdcall
 
 //---------------------------------------------------------------------------
 // DllMain
@@ -35,39 +12,35 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        LPVOID lpReserved
 					 )
 {
+	switch (ul_reason_for_call)
+	{
+		case DLL_PROCESS_ATTACH:
+		{
+			DisableThreadLibraryCalls(hModule);
+			break;
+		}
+		case DLL_THREAD_ATTACH:
+		case DLL_THREAD_DETACH:
+		case DLL_PROCESS_DETACH:
+			break;
+	}
     return TRUE;
 }
-//---------------------------------------------------------------------------
-// GetVideoOverlayObject
-//---------------------------------------------------------------------------
-void __stdcall GetVideoOverlayObject(
-	HWND callbackwin, IStream *stream, const tjs_char * streamname,
-	const tjs_char *type, unsigned __int64 size, iTVPVideoOverlay **out)
-{
-	*out = new tTVPDSVideoOverlay;
-
-	if( *out )
-		static_cast<tTVPDSVideoOverlay*>(*out)->BuildGraph( callbackwin, stream, streamname, type, size );
-}
-//---------------------------------------------------------------------------
-
-
 
 //---------------------------------------------------------------------------
 // GetAPIVersion
 //---------------------------------------------------------------------------
-void __stdcall GetAPIVersion(DWORD *ver)
+EXPORT(void) GetAPIVersion(DWORD *ver)
 {
 	*ver = TVP_KRMOVIE_VER;
 }
 //---------------------------------------------------------------------------
 
-
-
+static tjs_int GlobalRefCountAtInit = 0;
 //---------------------------------------------------------------------------
 // V2Link : Initialize TVP plugin interface
 //---------------------------------------------------------------------------
-HRESULT __stdcall V2Link(iTVPFunctionExporter *exporter)
+EXPORT(HRESULT) V2Link(iTVPFunctionExporter *exporter)
 {
 // メモリ確保位置でブレークを貼るには以下のメソッドで確保番号を指定する。
 // ブレークがかかった後は、呼び出し履歴(コールスタック)を見て、どこで確保されたメモリがリークしているか探る。
@@ -77,15 +50,15 @@ HRESULT __stdcall V2Link(iTVPFunctionExporter *exporter)
 
 	TVPInitImportStub(exporter);
 
-	EnsureLAVFilters();
-
+	GlobalRefCountAtInit = TVPPluginGlobalRefCount;
 	return S_OK;
 }
 //---------------------------------------------------------------------------
 // V2Unlink : Uninitialize TVP plugin interface
 //---------------------------------------------------------------------------
-HRESULT __stdcall V2Unlink()
+EXPORT(HRESULT) V2Unlink()
 {
+	if(TVPPluginGlobalRefCount > GlobalRefCountAtInit) return E_FAIL;
 	TVPUninitImportStub();
 
 #ifdef _DEBUG
@@ -95,4 +68,3 @@ HRESULT __stdcall V2Unlink()
 	return S_OK;
 }
 //---------------------------------------------------------------------------
-

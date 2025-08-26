@@ -1,0 +1,160 @@
+{
+  "name" : "Continuous Integration",
+  "on" : {
+    "push" : {
+      "paths" : [
+        "**.c",
+        "**.h",
+        "**.cpp",
+        "**.hpp",
+        "**.build",
+        "**.in",
+        "**.yml",
+        "Makefile"
+      ]
+    },
+    "pull_request" : {
+      "paths" : [
+        "**.c",
+        "**.h",
+        "**.cpp",
+        "**.hpp",
+        "**.build",
+        "**.in",
+        "**.yml",
+        "Makefile"
+      ]
+    }
+  },
+  "jobs" : {
+    "build-win32" : {
+      "runs-on" : "ubuntu-latest",
+      "container" : {
+        "image" : "ghcr.io/uyjulian/tvp_win32_build_container:latest",
+        "options" : "--user 1001:123"
+      },
+      "defaults" : {
+        "run" : {
+          "shell" : "bash"
+        }
+      },
+      "strategy" : {
+        "matrix" : {
+          "platform" : [
+            {
+              "triplet" : "i686-w64-mingw32",
+              "cmake-system-compiler" : "i686",
+              "target-arch" : "intel32",
+              "compiler" : "gcc"
+            },
+            {
+              "triplet" : "x86_64-w64-mingw32",
+              "cmake-system-compiler" : "amd64",
+              "target-arch" : "intel64",
+              "compiler" : "gcc"
+            },
+            {
+              "triplet" : "i686-w64-mingw32",
+              "cmake-system-compiler" : "i686",
+              "target-arch" : "intel32",
+              "compiler" : "clang"
+            },
+            {
+              "triplet" : "x86_64-w64-mingw32",
+              "cmake-system-compiler" : "amd64",
+              "target-arch" : "intel64",
+              "compiler" : "clang"
+            },
+            {
+              "triplet" : "armv7-w64-mingw32",
+              "cmake-system-compiler" : "arm",
+              "target-arch" : "arm32",
+              "compiler" : "clang"
+            },
+            {
+              "triplet" : "aarch64-w64-mingw32",
+              "cmake-system-compiler" : "arm64",
+              "target-arch" : "arm64",
+              "compiler" : "clang"
+            }
+          ]
+        }
+      },
+      "timeout-minutes" : 40,
+      "env" : {
+        "CMAKE_GENERATOR" : "Ninja"
+      },
+      "steps" : [
+        {
+          "name" : "Checkout repository",
+          "timeout-minutes" : 5,
+          "uses" : "actions/checkout@v4",
+          "with" : {
+            "submodules" : "recursive"
+          }
+        },
+        {
+          "name" : "Read additional flags",
+          "id" : "additional_flags",
+          "timeout-minutes" : 5,
+          "run" : "if test -f ./.github/workflows_flags; then\ncat ./.github/workflows_flags >> $GITHUB_OUTPUT\nfi"
+        },
+        {
+          "name" : "Set up Wine",
+          "if" : "steps.additional_flags.outputs.setup_wine == 'true'",
+          "timeout-minutes" : 5,
+          "run" : "bash /usr/local/util_scripts/setup_wine.bash"
+        },
+        {
+          "name" : "Set up mingw-w64 for Clang",
+          "if" : "matrix.platform.compiler == 'clang'",
+          "timeout-minutes" : 5,
+          "run" : "bash /usr/local/util_scripts/setup_llvm_mingw.bash"
+        },
+        {
+          "name" : "Compile project",
+          "run" : "make TARGET_ARCH=${{ matrix.platform.target-arch }} ARCHIVE=\\$\\(PROJECT_BASENAME\\).${{ matrix.platform.target-arch }}.${{ matrix.platform.compiler }}.7z archive -j$(getconf _NPROCESSORS_ONLN)"
+        },
+        {
+          "name" : "Upload artifact",
+          "uses" : "actions/upload-artifact@v4",
+          "timeout-minutes" : 5,
+          "with" : {
+            "name" : "binary-win32-${{ matrix.platform.target-arch }}-${{ matrix.platform.compiler }}",
+            "path" : "**/**.${{ matrix.platform.target-arch }}.${{ matrix.platform.compiler }}.7z"
+          }
+        }
+      ]
+    },
+    "create-release" : {
+      "needs" : [
+        "build-win32"
+      ],
+      "runs-on" : "ubuntu-latest",
+      "container" : {
+        "image" : "ubuntu:20.04",
+        "options" : "--user 0"
+      },
+      "timeout-minutes" : 5,
+      "if" : "github.ref_type == 'tag' && github.ref != 'refs/tags/latest'",
+      "steps" : [
+        {
+          "name" : "Download all artifacts",
+          "timeout-minutes" : 5,
+          "uses" : "actions/download-artifact@v4"
+        },
+        {
+          "name" : "Create release",
+          "if" : "github.ref_type == 'tag' && github.ref != 'refs/tags/latest'",
+          "timeout-minutes" : 5,
+          "uses" : "marvinpinto/action-automatic-releases@latest",
+          "with" : {
+            "repo_token" : "${{ secrets.GITHUB_TOKEN }}",
+            "prerelease" : "${{ contains(github.ref, '-rc') }}",
+            "files" : "**/**.7z"
+          }
+        }
+      ]
+    }
+  }
+}
